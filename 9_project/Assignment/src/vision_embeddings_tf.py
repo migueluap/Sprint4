@@ -29,11 +29,11 @@ def load_and_preprocess_image(image_path, target_size=(224, 224)):
     - np.array: Preprocessed image.
     """
     # TODO: Open the image using PIL Image.open and convert it to RGB format
-    img = None
+    img = Image.open(image_path).convert("RGB")
     # TODO: Resize the image to the target size
-    img = None
+    img = img.resize(target_size)
     # TODO: Convert the image to a numpy array and scale the pixel values to [0, 1]
-    img = None
+    img = np.array(img)/255.0
 
     return img
 
@@ -93,51 +93,52 @@ class FoundationalCVModel:
         
         if backbone == 'resnet50':
             # TODO: Load the ResNet50 model from tensorflow.keras.applications
-            self.base_model = None
+            self.base_model = ResNet50(weights='imagenet', include_top=False, input_tensor=input_layer)
         elif backbone == 'resnet101':
             # TODO: Load the ResNet101 model from tensorflow.keras.applications
-            self.base_model = None
+            self.base_model = ResNet101(weights='imagenet', include_top=False, input_tensor=input_layer)
         elif backbone == 'densenet121':
             # TODO: Load the DenseNet121 model from tensorflow.keras.applications
-            self.base_model = None
+            self.base_model = DenseNet121(weights='imagenet', include_top=False, input_tensor=input_layer)
         elif backbone == 'densenet169':
             # TODO: Load the DenseNet169 model from tensorflow.keras.applications
-            self.base_model = None
+            self.base_model = DenseNet169(weights='imagenet', include_top=False, input_tensor=input_layer)
         elif backbone == 'inception_v3':
             # TODO: Load the InceptionV3 model from tensorflow.keras.applications
-            self.base_model = None
+            self.base_model = InceptionV3(weights='imagenet', include_top=False, input_tensor=input_layer)
         elif backbone == 'convnextv2_tiny':
             # TODO: Load the ConvNeXtV2 Tiny model from transformers
-            self.base_model = None
+            self.base_model = TFConvNextV2Model.from_pretrained('facebook/convnext-tiny-224')
         elif backbone == 'convnextv2_base':
             # TODO: Load the ConvNeXtV2 Base model from transformers
-            self.base_model = None
+            self.base_model = TFConvNextV2Model.from_pretrained('facebook/convnext-base-224')
         elif backbone == 'convnextv2_large':
             # TODO: Load the ConvNeXtV2 Large model from transformers
-            self.base_model = None
+            self.base_model = TFConvNextV2Model.from_pretrained('facebook/convnext-large-224')
         elif backbone == 'swin_tiny':
             # TODO: Load the Swin Transformer Tiny model from transformers
-            self.base_model = None
+            self.base_model = TFSwinModel.from_pretrained('microsoft/swin-tiny-patch4-window7-224')
         elif backbone == 'swin_small':
             # TODO: Load the Swin Transformer Small model from transformers
-            self.base_model = None
+            self.base_model = TFSwinModel.from_pretrained('microsoft/swin-small-patch4-window7-224')
         elif backbone == 'swin_base':
             # TODO: Load the Swin Transformer Base model from transformers
-            self.base_model = None
+            self.base_model = TFSwinModel.from_pretrained('microsoft/swin-base-patch4-window7-224')
         elif backbone in ['vit_base', 'vit_large']:
             # TODO: Load the Vision Transformer (ViT) model from transformers
-            backbone_path = {
-                'vit_base': "None",
-                'vit_large': 'None',
-            }
-            self.base_model = None
+            # backbone_path = {
+            #     'vit_base': "None",
+            #     'vit_large': 'None',
+            # }
+            self.base_model = TFViTModel.from_pretrained(backbone)
         else:
             raise ValueError(f"Unsupported backbone model: {backbone}")
 
         
         if mode == 'eval':
             # TODO: Set the model to evaluation mode (non-trainable)
-            pass
+            #pass
+            self.base_model.trainable = False
         
         # Take into account the model's input requirements. In models from transformers, the input is channels first, but in models from keras.applications, the input is channels last.
         # Aditionally, the output of the model is different in both cases, we need to get the pooling of the output layer.
@@ -146,17 +147,21 @@ class FoundationalCVModel:
         if backbone in ['vit_base', 'vit_large', 'convnextv2_tiny', 'convnextv2_base', 'convnextv2_large', 'swin_tiny', 'swin_small', 'swin_base']:
             # TODO: Adjust the input for channels first models within the model
             # You can use the perm argument of tf.transpose to permute the dimensions of the input tensor
-            input_layer_transposed = None
+            #input_layer_transposed = None
+            input_layer_transposed = tf.transpose(input_layer, perm=[0, 2, 3, 1])  # Adjust input for channels first
             # TODO: Get the pooling output of the model "pooler_output"
-            outputs = None
+            outputs = self.base_model(input_layer_transposed).pooler_output  # Get pooling output for transformers
         # If is a model from keras.applications:
         else:
             # TODO: Get the pooling output of the model
             # In this case the pooling layer is not included in the model, we can use a pooling layer such as GlobalAveragePooling2D
-            outputs = None
+            #outputs = None
+            outputs = GlobalAveragePooling2D()(self.base_model(input_layer))  # Get pooling output for Keras models
         
         # TODO: Create the final model with the input layer and the pooling output
-        self.model = Model()
+        #self.model = Model()
+        self.model = Model(inputs=input_layer, outputs=outputs)  # Create the final model
+
         
     def get_output_shape(self):
         """
@@ -184,7 +189,13 @@ class FoundationalCVModel:
             Predictions or features from the model for the given images.
         """
         # TODO: Perform a forward pass through the model and return the predictions
-        predictions = None
+        #predictions = None
+        predictions = self.model(images)
+
+        # Ensure predictions is a numpy array
+        predictions = np.array(predictions)  
+
+
         return predictions
 
 
@@ -376,10 +387,13 @@ def get_embeddings_df(batch_size=32, path="data/images", dataset_name='', backbo
     features = []
     # Calculate the number of batches based on the dataset size and batch size
     num_batches = len(dataset) // batch_size + (1 if len(dataset) % batch_size != 0 else 0)
+    print(num_batches)
+    print (len(dataset))
     
     # Process images in batches and extract features
     for i in range(0, len(dataset), batch_size):
-        # Get the image files and images for the current batch
+    #for i in range(0, 500, batch_size):
+         # Get the image files and images for the current batch
         batch_files = dataset.image_files[i:i + batch_size]
         batch_imgs = np.array([dataset[j][1] for j in range(i, min(i + batch_size, len(dataset)))])
         
