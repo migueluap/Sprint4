@@ -111,6 +111,8 @@ env.bak/
 venv.bak/
 data/images/
 data/images/Embeddings_test
+Embeddings/
+Embeddings_test/
 
 # Spyder project settings
 .spyderproject
