@@ -57,20 +57,19 @@ def visualize_embeddings(X_train, X_test, y_train, y_test, plot_type='2D', metho
 
     if plot_type == '3D':
         if method == 'PCA':
-            #TODO: Create an instance of PCA for 3D visualization and fit it on the training data
-            pca = PCA(n_components=3)
-            pca.fit(X_train)
-            #TODO: Use the trained model to transform the test data
-            reduced_embeddings = pca.transform(X_test)
-            return pca 
+            # TODO: Create an instance of PCA for 3D visualization and fit it on the training data
+            red = PCA(n_components=3)
+            # TODO: Use the trained model to transform the test data
+            reduced_embeddings = red.fit_transform(X_test)
         elif method == 't-SNE':
-            #TODO: Implement t-SNE for 3D visualization
-            tsne = TSNE(n_components=3, perplexity=perplexity)
-            #TODO: Use the model to train and transform the test data
-            reduced_embeddings = tsne.fit_transform(X_test)
+            # TODO: Implement t-SNE for 3D visualization
+            red = TSNE(n_components=3, perplexity=perplexity)
+            # TODO: Use the model to train and transform the test data
+            reduced_embeddings = red.fit_transform(X_test)
         else:
             raise ValueError("Invalid method. Please choose either 'PCA' or 't-SNE'.")
         
+            
         df_reduced = pd.DataFrame(reduced_embeddings, columns=['col1', 'col2', 'col3'])
         df_reduced['Class'] = y_test
 
@@ -79,17 +78,15 @@ def visualize_embeddings(X_train, X_test, y_train, y_test, plot_type='2D', metho
     
     else:
         if method == 'PCA':
-            #TODO: Create an instance of PCA for 2D visualization and fit it on the training data
-            pca = PCA(n_components=2)
-            pca.fit(X_train)
-            #TODO: Use the trained model to transform the test data
-            reduced_embeddings = pca.transform(X_test)
-            return pca 
+            # TODO: Create an instance of PCA for 2D visualization and fit it on the training data
+            red = PCA(n_components=2)
+            # TODO: Use the trained model to transform the test data
+            reduced_embeddings = red.fit_transform(X_test)
         elif method == 't-SNE':
-            #TODO: Implement t-SNE for 2D visualization
-            tsne = TSNE(n_components=2, perplexity=perplexity)
-            #TODO: Use the model to train and transform the test data
-            reduced_embeddings = tsne.fit_transform(X_test)
+            # TODO: Implement t-SNE for 2D visualization
+            red = TSNE(n_components=2, perplexity=perplexity)
+            # TODO: Use the model to train and transform the test data
+            reduced_embeddings = red.fit_transform(X_test)
         else:
             raise ValueError("Invalid method. Please choose either 'PCA' or 't-SNE'.")
         
@@ -106,7 +103,7 @@ def visualize_embeddings(X_train, X_test, y_train, y_test, plot_type='2D', metho
     
     fig.show()
     
-    return reduced_embeddings
+    return red
 
 
 def test_model(X_test, y_test, model):
@@ -231,29 +228,23 @@ def train_and_evaluate_model(X_train, X_test, y_train, y_test, models=None, test
     visualize_embeddings(X_train, X_test, y_train, y_test, plot_type='2D', method='PCA')
     
     if not(models):
+        # TODO: Implement the ML models
+        # The models should be a list of tuples, where each tuple contains the model name and the model instance
+        # Example: models = [ ('Model 1', Model1()), ('Model2', Model2()), ... ('ModelN', ModelN()) ]
         models = [
             ('Random Forest', RandomForestClassifier()),
-            #('Decision Tree', DecisionTreeClassifier()),
             ('Logistic Regression', LogisticRegression())
         ]
 
-    trained_models = []
     for name, model in models:
-        print('#'*20, f' {name} ', '#'*20)
-        model.fit(X_train, y_train)
-        trained_models.append((name, model))
         
+        print('#'*20, f' {name} ', '#'*20)
+        # TODO: Train the model on the training
+        
+        model.fit(X_train, y_train)
+
+        # TODO: Evaluate the model on the test set using the test_model function
         if test:
-            y_pred = model.predict(X_test)
             accuracy, precision, recall, f1 = test_model(X_test, y_test, model)
-            print(f'Accuracy: {accuracy}, Precision: {precision}, Recall: {recall}, F1-score: {f1}')
-    
-    return trained_models
-
-
-
-
-
-
-
-
+        
+    return models
